@@ -59,6 +59,15 @@ CREATE INDEX IF NOT EXISTS idx_logs_ts ON logs(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_logs_server ON logs(server_id);
 `);
 
+// --- lightweight migrations (add columns introduced after the initial schema) -
+function addColumn(name, def) {
+  try { db.exec(`ALTER TABLE servers ADD COLUMN ${name} ${def}`); } catch (_) { /* already exists */ }
+}
+// auto-detected control channel (cached so we don't re-probe on every action)
+addColumn('resolved_control', 'TEXT');
+addColumn('resolved_auth', 'TEXT');
+addColumn('resolved_port', 'INTEGER');
+
 // --- default settings -------------------------------------------------------
 const DEFAULTS = {
   // c3pool stratum (configurable). c3pool auto-routes by region on these.
