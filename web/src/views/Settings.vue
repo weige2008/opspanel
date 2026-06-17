@@ -99,7 +99,28 @@ onMounted(load);
         <Field v-model="s['xmrig.version']" label="xmrig 版本" />
         <Field v-model="s['miner.api_port']" type="number" label="xmrig API 端口" hint="-1 关闭（算力读取用）" />
         <Field v-model="s['miner.worker']" label="Worker 名称" hint="留空=服务器名/主机名" class="sm:col-span-2" />
-        <Field v-model="s['miner.extra_args']" label="额外 xmrig 参数" placeholder="--max-cpu-uses=4 --donate-level=1" class="sm:col-span-2" />
+
+        <!-- install method -->
+        <div class="sm:col-span-2">
+          <span class="field-label">安装方式</span>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <button type="button" class="text-left p-3.5 rounded-[12px] border transition-all"
+              :class="s['miner.method']!=='c3pool' ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--border-soft)] bg-[var(--fill)]'"
+              @click="s['miner.method']='custom'">
+              <div class="font-semibold text-sm flex items-center gap-2"><Icon name="cpu" :size="15" /> 自定义安装器</div>
+              <div class="text-[12px] text-muted mt-1">GitHub xmrig + 我们的控制/watchdog，完全可控、换钱包批量重装</div>
+            </button>
+            <button type="button" class="text-left p-3.5 rounded-[12px] border transition-all"
+              :class="s['miner.method']==='c3pool' ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--border-soft)] bg-[var(--fill)]'"
+              @click="s['miner.method']='c3pool'">
+              <div class="font-semibold text-sm flex items-center gap-2"><Icon name="zap" :size="15" /> c3pool 官方脚本</div>
+              <div class="text-[12px] text-muted mt-1">download.c3pool.org 调优版 + huge pages/MSR，受限地区更稳</div>
+            </button>
+          </div>
+        </div>
+        <Field v-model="s['miner.cpu_max']" type="number" label="最大占用核心数" hint="xmrig --max-cpu-uses，留空=全部核心" />
+        <Field v-model="s['miner.cpu_priority']" type="number" label="CPU 优先级 (0-5)" hint="xmrig --cpu-priority，留空=默认；越高越抢占" />
+        <Field v-model="s['miner.extra_args']" label="额外 xmrig 参数" placeholder="--donate-level=1" hint="如 --donate-level=1；max-cpu-uses/priority 已单独提供" class="sm:col-span-2" />
       </div>
     </div>
 
