@@ -1,13 +1,12 @@
 [Unit]
-Description=C3Pool Mining Manager
-Documentation=https://c3pool.org
+Description=OpsPanel — server management console
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-# Change this to match your install path / user.
-WorkingDirectory=/opt/c3pool-manager
+# Change these to match your install path / user.
+WorkingDirectory=/opt/opspanel
 ExecStart=/usr/bin/node --experimental-sqlite server/index.js
 Restart=always
 RestartSec=5
@@ -15,8 +14,6 @@ RestartSec=5
 NoNewPrivileges=true
 ProtectSystem=full
 ProtectHome=true
-# The manager needs to dial out to targets (SSH 22 / WinRM 5985-5986) and
-# listen on 7788; keep networking enabled.
 Environment=NODE_ENV=production
 # Optional: bind only to localhost and front with nginx instead.
 # Environment=server.host=127.0.0.1
