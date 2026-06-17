@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OpsPanel — 服务器管理控制台</title>
+<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+<script>
+  // Apply theme before paint to avoid flash.
+  (function(){
+    var t = localStorage.getItem('c3pm_theme');
+    if (t !== 'glass') t = 'fluent';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+/* ============================================================= */
+/*  C3Pool Mining Manager — dual theme system                     */
+/*    data-theme="fluent"  -> Windows 11 / Fluent 2 (light mica)  */
+/*    data-theme="glass"   -> Glassmorphism (dark, frosted glass) */
+/* ============================================================= */
+
+/* ---------- shared base ---------- */
+*{box-sizing:border-box;}
+html,body,#app{height:100%;margin:0;}
+body{
+  font-family:"Segoe UI Variable","Segoe UI",Inter,-apple-system,BlinkMacSystemFont,Roboto,"Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  background:var(--bg);background-attachment:fixed;color:var(--text);transition:background .35s ease,color .25s ease;
+}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:8px;border:2px solid transparent;background-clip:padding-box;}
+::-webkit-scrollbar-thumb:hover{background:var(--scroll-hover);background-clip:padding-box;}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ============================================================
+   THEME: FLUENT 2  (light, Mica gradient + Acrylic)
+   ============================================================ */
+[data-theme="fluent"]{
+  --bg:
+    radial-gradient(1100px 620px at 100% -8%, #dbe9fb 0%, rgba(219,233,251,0) 58%),
+    radial-gradient(820px 520px at -6% 108%, #ece6fb 0%, rgba(236,230,251,0) 55%),
+    radial-gradient(900px 600px at 50% 140%, #e4f3f0 0%, rgba(228,243,240,0) 50%),
+    linear-gradient(180deg,#f6f8fb 0%,#eef2f8 100%);
+  --text:#1b1b1b; --text-sub:#626262; --text-muted:#8a8a8a;
+  --card-bg:rgba(255,255,255,0.62);
+  --card-bg-solid:rgba(252,253,255,0.92);
+  --card-border:1px solid rgba(255,255,255,0.85);
+  --card-hl:inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(255,255,255,0.25);
+  --card-shadow:0 1.6px 3.6px rgba(0,0,0,.10), 0 .3px .9px rgba(0,0,0,.06);
+  --card-shadow-hover:0 14px 34px rgba(20,40,80,.14), 0 2px 6px rgba(20,40,80,.08);
+  --radius:8px; --radius-sm:6px; --radius-lg:12px;
+  --blur:saturate(140%) blur(34px);
+  --accent:#0f6cbd; --accent-strong:#115ea3; --accent-soft:rgba(15,108,189,.12); --accent-text:#fff;
+  --line:rgba(0,0,0,0.08); --line-strong:rgba(0,0,0,0.12);
+  --fill:rgba(0,0,0,0.035); --fill-hover:rgba(0,0,0,0.06);
+  --header-bg:rgba(252,253,255,0.66); --header-text:#1b1b1b; --header-border:rgba(0,0,0,0.07);
+  --aside-bg:rgba(249,251,254,0.55); --aside-text:#3a3a3a; --aside-active-bg:rgba(15,108,189,.12); --aside-active-text:#0f5a9e;
+  --code-bg:#fbfcfe; --code-text:#243b55; --code-border:rgba(0,0,0,.08);
+  --scroll:rgba(0,0,0,.18); --scroll-hover:rgba(0,0,0,.32);
+  /* element-plus tokens */
+  --el-color-primary:#0f6cbd;
+  --el-color-primary-light-3:#3f8ad0; --el-color-primary-light-5:#7eb2df; --el-color-primary-light-7:#b4d4ec; --el-color-primary-light-8:#d2e4f4; --el-color-primary-light-9:#e6f0fa;
+  --el-color-primary-dark-2:#0b5594;
+  --el-text-color-primary:#1b1b1b; --el-text-color-regular:#444; --el-text-color-secondary:#7a7a7a; --el-text-color-placeholder:#9a9a9a;
+  --el-border-color:#e3e7ee; --el-border-color-light:#eceff5; --el-border-color-lighter:#f2f4f8; --el-border-color-extra-light:#f6f7fa;
+  --el-fill-color:#f4f6fa; --el-fill-color-light:#f8f9fc; --el-fill-color-lighter:#fbfcfe; --el-fill-color-blank:transparent;
+  --el-bg-color:rgba(255,255,255,.78); --el-bg-color-page:transparent; --el-bg-color-overlay:rgba(255,255,255,.92);
+  --el-border-radius-base:6px; --el-border-radius-small:4px;
+  --el-mask-color:rgba(20,30,55,.32);
+  color-scheme:light;
+}
+
+/* ============================================================
+   THEME: GLASS  (dark gradient + frosted glass + neon glow)
+   ============================================================ */
+[data-theme="glass"]{
+  --bg:
+    radial-gradient(1000px 620px at 84% -12%, rgba(56,189,248,.20) 0%, rgba(56,189,248,0) 58%),
+    radial-gradient(860px 560px at -8% 112%, rgba(167,139,250,.22) 0%, rgba(167,139,250,0) 55%),
+    radial-gradient(700px 500px at 50% 120%, rgba(45,212,191,.12) 0%, rgba(45,212,191,0) 55%),
+    linear-gradient(160deg,#0a0f20 0%,#0a1024 52%,#0b0d22 100%);
+  --text:#eef3ff; --text-sub:#aab4d6; --text-muted:#7e89ad;
+  --card-bg:rgba(255,255,255,0.055);
+  --card-bg-solid:rgba(20,27,52,0.72);
+  --card-border:1px solid rgba(255,255,255,0.13);
+  --card-hl:inset 0 1px 0 rgba(255,255,255,0.20), inset 0 0 0 1px rgba(255,255,255,0.04);
+  --card-shadow:0 14px 42px rgba(0,0,0,.48), 0 2px 8px rgba(0,0,0,.30);
+  --card-shadow-hover:0 22px 60px rgba(0,0,0,.55), 0 0 30px rgba(56,189,248,.16);
+  --radius:14px; --radius-sm:10px; --radius-lg:18px;
+  --blur:saturate(160%) blur(22px);
+  --accent:#38bdf8; --accent-strong:#0ea5e9; --accent-soft:rgba(56,189,248,.16); --accent-text:#04121f;
+  --line:rgba(255,255,255,0.10); --line-strong:rgba(255,255,255,0.16);
+  --fill:rgba(255,255,255,0.04); --fill-hover:rgba(255,255,255,0.08);
+  --header-bg:rgba(13,18,38,0.55); --header-text:#eef3ff; --header-border:rgba(255,255,255,0.08);
+  --aside-bg:rgba(13,18,40,0.48); --aside-text:#c7d0ee; --aside-active-bg:rgba(56,189,248,.16); --aside-active-text:#7dd3fc;
+  --code-bg:rgba(8,12,28,0.7); --code-text:#cdd9f5; --code-border:rgba(255,255,255,0.10);
+  --scroll:rgba(255,255,255,.18); --scroll-hover:rgba(56,189,248,.45);
+  --el-color-primary:#38bdf8;
+  --el-color-primary-light-3:#1c94d6; --el-color-primary-light-5:#2f6f99; --el-color-primary-light-7:#2a4f63; --el-color-primary-light-8:#233c4c; --el-color-primary-light-9:rgba(56,189,248,.16);
+  --el-color-primary-dark-2:#7dd3fc;
+  --el-text-color-primary:#eef3ff; --el-text-color-regular:#c7d0ee; --el-text-color-secondary:#94a0c6; --el-text-color-placeholder:#6b7599;
+  --el-border-color:rgba(255,255,255,0.12); --el-border-color-light:rgba(255,255,255,0.09); --el-border-color-lighter:rgba(255,255,255,0.06); --el-border-color-extra-light:rgba(255,255,255,0.04);
+  --el-fill-color:rgba(255,255,255,0.05); --el-fill-color-light:rgba(255,255,255,0.04); --el-fill-color-lighter:rgba(255,255,255,0.03); --el-fill-color-blank:transparent;
+  --el-bg-color:rgba(20,27,52,0.72); --el-bg-color-page:transparent; --el-bg-color-overlay:rgba(18,24,48,0.92);
+  --el-border-radius-base:10px; --el-border-radius-small:8px;
+  --el-mask-color:rgba(4,8,22,.6);
+  color-scheme:dark;
+}
+
+/* ---------- acrylic / glass surface primitive ---------- */
+.surface{
+  background:var(--card-bg);
+  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
+  border:var(--card-border);
+  border-radius:var(--radius);
+  box-shadow:var(--card-shadow), var(--card-hl);
+  transition:transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s cubic-bezier(.2,.7,.2,1), background .25s ease;
+}
+
+/* ---------- layout ---------- */
+.app-layout{height:100%;}
+.main{padding:18px;overflow:auto;}
+.toolbar{margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.muted{color:var(--text-muted);font-size:12px;line-height:1.5;}
+.mono{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;font-size:12px;}
+.num{font-size:26px;font-weight:700;letter-spacing:-.5px;}
+
+/* ---------- header ---------- */
+.header{
+  display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 18px;
+  color:var(--header-text);
+  background:var(--header-bg);
+  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
+  border-bottom:1px solid var(--header-border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.10);
+}
+.header .title{font-weight:650;font-size:16px;letter-spacing:.2px;display:flex;align-items:center;gap:8px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+[data-theme="glass"] .header .title{background:linear-gradient(90deg,#fff,#7dd3fc);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+
+/* ---------- theme switch (segmented) ---------- */
+.theme-switch{display:inline-flex;gap:2px;padding:3px;border-radius:10px;border:1px solid var(--line);background:var(--fill);backdrop-filter:blur(6px);}
+.theme-btn{border:0;background:transparent;color:var(--text-sub);font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all .2s ease;display:inline-flex;align-items:center;gap:5px;}
+.theme-btn:hover{color:var(--text);}
+.theme-btn.active{background:var(--accent);color:var(--accent-text);box-shadow:0 2px 8px var(--accent-soft);}
+[data-theme="glass"] .theme-btn.active{box-shadow:0 0 16px var(--accent-soft),0 2px 8px rgba(0,0,0,.4);}
+
+/* ---------- aside / menu ---------- */
+.aside{background:var(--aside-bg);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-right:1px solid var(--header-border);}
+.aside .el-menu{background:transparent !important;border-right:0 !important;}
+.aside .el-menu-item{color:var(--aside-text);border-radius:8px;margin:3px 8px;height:44px;line-height:44px;transition:background .18s ease,color .18s ease,transform .18s ease;}
+.aside .el-menu-item:hover{background:var(--fill-hover);}
+.aside .el-menu-item.is-active{background:var(--aside-active-bg) !important;color:var(--aside-active-text) !important;font-weight:600;box-shadow:inset 3px 0 0 var(--accent);}
+[data-theme="glass"] .aside .el-menu-item.is-active{box-shadow:inset 3px 0 0 var(--accent),0 0 18px rgba(56,189,248,.18);}
+
+/* ---------- cards ---------- */
+.el-card{border-radius:var(--radius) !important;background:var(--card-bg) !important;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:var(--card-border) !important;box-shadow:var(--card-shadow),var(--card-hl) !important;transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s cubic-bezier(.2,.7,.2,1) !important;overflow:hidden;}
+.el-card:hover{transform:translateY(-2px);box-shadow:var(--card-shadow-hover),var(--card-hl) !important;}
+.el-card__header{background:transparent !important;border-bottom:1px solid var(--line) !important;color:var(--text) !important;}
+[data-theme="glass"] .el-card{border-color:rgba(255,255,255,.13) !important;}
+
+.stat-card{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+.stat-card .el-card{flex:1 1 168px;cursor:default;}
+
+/* ---------- tables ---------- */
+.el-table{background:transparent !important;color:var(--text) !important;border-radius:var(--radius-sm) !important;--el-table-border-color:var(--line);--el-table-header-bg-color:transparent;--el-table-row-hover-bg-color:var(--fill-hover);--el-table-tr-bg-color:transparent;--el-table-bg-color:transparent;}
+.el-table th.el-table__cell{background:var(--fill) !important;color:var(--text-sub) !important;font-weight:600;border-bottom:1px solid var(--line-strong) !important;}
+.el-table tr,.el-table td.el-table__cell{background:transparent !important;color:var(--text) !important;border-bottom:1px solid var(--line) !important;}
+.el-table__body tr:hover>td.el-table__cell{background:var(--fill-hover) !important;}
+.el-table--border,.el-table--border .el-table__cell{border-color:var(--line) !important;}
+.el-table__empty-block{background:transparent;}
+
+/* ---------- buttons ---------- */
+.el-button{border-radius:var(--el-border-radius-base) !important;font-weight:550;transition:transform .14s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease !important;}
+.el-button:active{transform:scale(.98);}
+.el-button--primary{background:var(--accent) !important;border-color:var(--accent) !important;color:var(--accent-text) !important;box-shadow:0 1px 2px rgba(0,0,0,.12);}
+.el-button--primary:hover{background:var(--accent-strong) !important;border-color:var(--accent-strong) !important;}
+[data-theme="glass"] .el-button--primary:hover{box-shadow:0 0 18px var(--accent-soft);}
+.el-button--default{background:var(--card-bg) !important;border-color:var(--line-strong) !important;color:var(--text) !important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.el-button--default:hover{background:var(--fill-hover) !important;border-color:var(--accent) !important;color:var(--accent) !important;}
+.el-button.is-text{color:var(--header-text) !important;}
+.el-button--success{box-shadow:0 1px 2px rgba(0,0,0,.12);}
+.el-button-group .el-button{box-shadow:none !important;}
+
+/* ---------- inputs / selects / textarea ---------- */
+.el-input__wrapper,.el-textarea__inner{background:var(--card-bg) !important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 0 0 1px var(--line-strong) inset, var(--card-hl) !important;border-radius:var(--radius-sm) !important;transition:box-shadow .2s ease !important;}
+.el-input__inner,.el-textarea__inner{color:var(--text) !important;}
+.el-input__inner::placeholder,.el-textarea__inner::placeholder{color:var(--text-muted) !important;}
+.el-input.is-focus .el-input__wrapper,.el-input__wrapper.is-focus{box-shadow:0 0 0 2px var(--accent-soft) inset, 0 0 0 1px var(--accent) inset !important;}
+[data-theme="glass"] .el-input.is-focus .el-input__wrapper{box-shadow:0 0 0 1px var(--accent) inset,0 0 18px var(--accent-soft) !important;}
+.el-input-number__wrapper{background:var(--card-bg) !important;}
+.el-select__wrapper{background:var(--card-bg) !important;box-shadow:0 0 0 1px var(--line-strong) inset !important;border-radius:var(--radius-sm) !important;}
+
+/* ---------- form ---------- */
+.el-form-item__label{color:var(--text-sub) !important;font-weight:550;}
+.el-divider__text{background:transparent !important;color:var(--text-muted) !important;}
+.el-divider{background-color:var(--line) !important;}
+
+/* ---------- tags / switch / alerts ---------- */
+.el-tag{border-radius:6px !important;background:var(--fill) !important;border-color:var(--line-strong) !important;color:var(--text-sub) !important;}
+.el-tag--warning{background:rgba(245,158,11,.16) !important;color:#f59e0b !important;border-color:transparent !important;}
+.el-tag--success{background:rgba(34,197,94,.16) !important;color:#22c55e !important;border-color:transparent !important;}
+.el-tag--danger{background:rgba(239,68,68,.16) !important;color:#ef4444 !important;border-color:transparent !important;}
+[data-theme="glass"] .el-tag{background:rgba(255,255,255,.07) !important;}
+.el-switch.is-checked .el-switch__core{background-color:var(--accent) !important;border-color:var(--accent) !important;}
+[data-theme="glass"] .el-switch.is-checked .el-switch__core{box-shadow:0 0 14px var(--accent-soft);}
+.el-alert{border-radius:var(--radius) !important;border:1px solid var(--line) !important;background:var(--card-bg) !important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
+.el-alert--warning{background:rgba(245,158,11,.12) !important;border-color:rgba(245,158,11,.3) !important;}
+.el-alert--info{background:var(--accent-soft) !important;border-color:var(--accent) !important;}
+.el-alert__title,.el-alert__description{color:var(--text) !important;}
+
+/* ---------- tabs ---------- */
+.el-tabs__nav-wrap::after{background-color:var(--line) !important;}
+.el-tabs__item{color:var(--text-sub) !important;font-weight:550;}
+.el-tabs__item.is-active{color:var(--accent) !important;}
+.el-tabs__active-bar{background-color:var(--accent) !important;height:3px !important;border-radius:2px;}
+[data-theme="glass"] .el-tabs__active-bar{box-shadow:0 0 10px var(--accent);}
+
+/* ---------- dialogs ---------- */
+.el-overlay{background:var(--el-mask-color) !important;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+.el-dialog,.el-message-box{background:var(--el-bg-color-overlay) !important;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:var(--card-border) !important;border-radius:var(--radius-lg) !important;box-shadow:0 24px 70px rgba(0,0,0,.45),var(--card-hl) !important;color:var(--text) !important;}
+.el-dialog__title,.el-message-box__title{color:var(--text) !important;}
+.el-dialog__headerbtn .el-dialog__close{color:var(--text-sub) !important;}
+
+/* ---------- dropdowns / popovers (overlay) ---------- */
+.el-popper,.el-select-dropdown,.el-dropdown-menu,.el-picker-panel{background:var(--el-bg-color-overlay) !important;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:var(--card-border) !important;border-radius:var(--radius) !important;box-shadow:var(--card-shadow) !important;color:var(--text) !important;}
+.el-popper.is-light{border:var(--card-border) !important;}
+.el-select-dropdown__item,.el-dropdown-menu__item{color:var(--text) !important;}
+.el-select-dropdown__item.hover,.el-select-dropdown__item:hover,.el-dropdown-menu__item:hover{background:var(--fill-hover) !important;color:var(--accent) !important;}
+.el-select-dropdown__item.selected{color:var(--accent) !important;font-weight:600;}
+.el-popper.is-light .el-popper__arrow::before{background:var(--el-bg-color-overlay) !important;border-color:var(--card-border) !important;}
+
+/* ---------- misc elements ---------- */
+.el-loading-mask{background:var(--el-mask-color) !important;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+.el-empty__description{color:var(--text-muted) !important;}
+.el-message{border-radius:10px !important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
+
+/* ---------- code box ---------- */
+.apibox{background:var(--code-bg);color:var(--code-text);border:1px solid var(--code-border);border-radius:var(--radius-sm);padding:13px 15px;font-size:12px;line-height:1.75;white-space:pre-wrap;word-break:break-all;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+
+/* ---------- login ---------- */
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:20px;}
+.login-card{width:392px;padding:30px 30px 10px;border-radius:var(--radius-lg);background:var(--card-bg-solid) !important;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:var(--card-border);box-shadow:0 30px 80px rgba(8,16,40,.35),var(--card-hl);}
+
+/* small entrance flourish for cards in main */
+.main .el-card,.main .stat-card .el-card{animation:rise .4s cubic-bezier(.2,.7,.2,1) both;}
+@keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/element-plus"></script>
+<script src="https://unpkg.com/element-plus/dist/locale/zh-cn.js"></script>
+<script src="https://unpkg.com/@element-plus/icons-vue"></script>
+
+<script>
+const { createApp, reactive, ref, computed, onMounted, watch, h, nextTick } = Vue;
+
+function tokenKey(){ return 'c3pm_token'; }
+function getToken(){ return localStorage.getItem(tokenKey()); }
+function setToken(v){ v ? localStorage.setItem(tokenKey(), v) : localStorage.removeItem(tokenKey()); }
+function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+
+async function api(path, opts={}){
+  const headers = Object.assign({}, opts.headers||{});
+  if(getToken()) headers['Authorization'] = 'Bearer ' + getToken();
+  if(opts.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+  const r = await fetch(path, { ...opts, headers,
+    body: opts.body && typeof opts.body!=='string' ? JSON.stringify(opts.body) : opts.body });
+  if(r.status===401){ setToken(null); location.reload(); throw new Error('请先登录'); }
+  const text = await r.text();
+  let json; try{ json = text ? JSON.parse(text) : {}; }catch(_){ json = { error:text }; }
+  if(!r.ok){ const msg = json.error || ('HTTP '+r.status); const e = new Error(msg); e.payload=json; throw e; }
+  return json;
+}
+async function apikeyPost(path, body){ // demo only against api/v1 using the stored key from settings
+  return fetch(path, { method:'POST', headers:{'Content-Type':'application/json','X-API-Key': body.__key||''}, body: JSON.stringify(body) }).then(r=>r.json());
+}
+
+const LOGIN_TEMPLATE = `
+<div class="login-wrap">
+  <el-card class="login-card">
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:20px;font-weight:700;color:var(--accent)">OpsPanel</div>
+      <div class="muted">服务器管理控制台 · 登录</div>
+    </div>
+    <el-form @submit.prevent="login" label-position="top">
+      <el-form-item label="用户名">
+        <el-input v-model="user" placeholder="admin" autofocus></el-input>
+      </el-form-item>
+      <el-form-item label="密码">
+        <el-input v-model="pass" type="password" show-password @keyup.enter="login"></el-input>
+        <div class="muted" style="margin-top:4px">默认密码 <code>adminadmin</code>，登录后请到「设置」修改。</div>
+      </el-form-item>
+      <el-button type="primary" :loading="loading" @click="login" style="width:100%">登录</el-button>
+    </el-form>
+  </el-card>
+</div>`;
+
+const APP_TEMPLATE = `
+<el-container class="app-layout">
+  <el-header class="header">
+    <div class="title"> OpsPanel <span class="muted" style="font-weight:400;margin-left:4px">服务器管理控制台</span></div>
+    <div class="header-right">
+      <el-tag v-if="wallet" type="warning" effect="dark" size="small">钱包: {{ walletShort }}</el-tag>
+      <div class="theme-switch" role="group" title="切换主题">
+        <button type="button" class="theme-btn" :class="{active:theme==='fluent'}" @click="setTheme('fluent')">Fluent</button>
+        <button type="button" class="theme-btn" :class="{active:theme==='glass'}" @click="setTheme('glass')">玻璃</button>
+      </div>
+      <el-button text @click="logout">退出</el-button>
+    </div>
+  </el-header>
+  <el-container>
+    <el-aside width="188px" class="aside">
+      <el-menu :default-active="tab" @select="t=>tab=t">
+        <el-menu-item index="servers"><el-icon><Monitor/></el-icon><span>服务器</span></el-menu-item>
+        <el-menu-item index="settings"><el-icon><Setting/></el-icon><span>设置</span></el-menu-item>
+        <el-menu-item index="logs"><el-icon><Document/></el-icon><span>日志</span></el-menu-item>
+      </el-menu>
+    </el-aside>
+    <el-main class="main">
+      <!-- DASHBOARD / SERVERS -->
+      <div v-show="tab==='servers'">
+        <div class="stat-card">
+          <el-card><div class="muted">总数</div><div class="num">{{ servers.length }}</div></el-card>
+          <el-card><div class="muted">启用</div><div class="num">{{ enabledCount }}</div></el-card>
+          <el-card><div class="muted">挖矿中</div><div class="num" style="color:#67c23a">{{ miningCount }}</div></el-card>
+          <el-card><div class="muted">未运行</div><div class="num" style="color:#f56c6c">{{ downCount }}</div></el-card>
+          <el-card><div class="muted">总算力</div><div class="num">{{ totalHash }}</div></el-card>
+        </div>
+
+        <div class="toolbar">
+          <el-button type="primary" :icon="Plus" @click="openEditor()">添加服务器</el-button>
+          <el-divider direction="vertical"/>
+          <el-button :icon="Refresh" @click="refreshAll" :loading="refreshing">刷新全部状态</el-button>
+          <el-button type="success" :icon="VideoPlay" @click="bulkAction('install')" :disabled="!selected.length">一键开挖(选中)</el-button>
+          <el-button type="warning" :icon="VideoPause" @click="bulkAction('stop')" :disabled="!selected.length">停止(选中)</el-button>
+          <el-button :icon="RefreshRight" @click="bulkAction('restart')" :disabled="!selected.length">重启(选中)</el-button>
+          <el-button type="danger" plain :icon="Delete" @click="bulkAction('uninstall')" :disabled="!selected.length">卸载(选中)</el-button>
+        </div>
+
+        <el-table :data="servers" @selection-change="s=>selected=s" v-loading="loadingServers" row-key="id" border>
+          <el-table-column type="selection" width="42"/>
+          <el-table-column label="名称" prop="name" min-width="120">
+            <template #default="{row}">
+              <strong>{{ row.name }}</strong>
+              <div class="muted">{{ row.tags }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="系统" width="90">
+            <template #default="{row}">
+              <el-tag size="small" :type="row.os==='linux'?'success':'primary'">{{ row.os }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="控制" width="90" prop="control"/>
+          <el-table-column label="地址" min-width="160">
+            <template #default="{row}"><span class="mono">{{ row.host }}:{{ row.port }}</span></template>
+          </el-table-column>
+          <el-table-column label="状态" width="110">
+            <template #default="{row}">
+              <el-tag size="small" :type="statusType(row.last_status)">
+                {{ row.last_status || (row.enabled?'未知':'已禁用') }}
+              </el-tag>
+              <div class="muted">{{ row.last_hashrate }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="360">
+            <template #default="{row}">
+              <el-button-group>
+                <el-button size="small" @click="testConn(row)">连接</el-button>
+                <el-button size="small" @click="statusOne(row)">状态</el-button>
+                <el-button size="small" type="success" @click="actionOne(row,'install')">开挖</el-button>
+                <el-button size="small" type="warning" @click="actionOne(row,'stop')">停止</el-button>
+              </el-button-group>
+              <el-dropdown trigger="click" @command="c=>rowCmd(c,row)" style="margin-left:6px">
+                <el-button size="small">更多<el-icon><ArrowDown/></el-icon></el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="restart">重启</el-dropdown-item>
+                    <el-dropdown-item command="uninstall">卸载</el-dropdown-item>
+                    <el-dropdown-item command="edit">编辑</el-dropdown-item>
+                    <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <!-- SETTINGS -->
+      <div v-show="tab==='settings'" v-loading="loadingSettings">
+        <el-tabs v-model="settingsTab">
+          <el-tab-pane label="挖矿配置" name="miner">
+            <el-form label-width="170px" style="max-width:760px">
+              <el-form-item label="XMR 钱包地址">
+                <el-input v-model="s['wallet.address']" placeholder="48Bhi... (必填)"></el-input>
+                <div class="muted">c3pool 收益将打入该地址。主网标准地址。</div>
+              </el-form-item>
+              <el-form-item label="矿池 Stratum">
+                <el-input v-model="s['pool.url']"></el-input>
+              </el-form-item>
+              <el-form-item label="备用矿池">
+                <el-input v-model="s['pool.url.backup']" placeholder="可空"></el-input>
+              </el-form-item>
+              <el-form-item label="TLS">
+                <el-switch v-model="s['pool.tls']" active-value="true" inactive-value="false"></el-switch>
+              </el-form-item>
+              <el-form-item label="xmrig 版本">
+                <el-input v-model="s['xmrig.version']"></el-input>
+              </el-form-item>
+              <el-form-item label="Worker 名称">
+                <el-input v-model="s['miner.worker']" placeholder="留空=用服务器名；填 hostname=用主机名"></el-input>
+              </el-form-item>
+              <el-form-item label="xmrig API 端口">
+                <el-input v-model="s['miner.api_port']"></el-input>
+                <div class="muted">用于读取实时算力。填 -1 关闭。</div>
+              </el-form-item>
+              <el-form-item label="额外 xmrig 参数">
+                <el-input v-model="s['miner.extra_args']" placeholder="--max-cpu-uses=4 等"></el-input>
+              </el-form-item>
+              <el-form-item><el-button type="primary" @click="saveSettings">保存设置</el-button></el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="Web 与 API" name="web">
+            <el-alert v-if="s['web.password']==='adminadmin'" type="warning" :closable="false" show-icon style="margin-bottom:12px">
+              当前 Web 密码仍为默认值 <b>adminadmin</b>，建议立即修改以保证安全。
+            </el-alert>
+            <el-alert v-if="!s['api.key']" type="info" :closable="false" show-icon style="margin-bottom:12px">
+              尚未设置 API Key，外部一键开挖接口 <code>/api/v1/*</code> 当前被禁用。生成或输入一个 Key 后点「保存」即可启用。
+            </el-alert>
+            <el-form label-width="170px" style="max-width:760px">
+              <el-form-item label="Web 用户名"><el-input v-model="s['web.user']"></el-input></el-form-item>
+              <el-form-item label="Web 密码"><el-input v-model="s['web.password']" show-password></el-input></el-form-item>
+              <el-form-item label="监听地址"><el-input v-model="s['server.host']"></el-input></el-form-item>
+              <el-form-item label="监听端口"><el-input v-model="s['server.port']"></el-input></el-form-item>
+              <el-form-item label="外部 API">
+                <el-switch v-model="s['api.enabled']" active-value="true" inactive-value="false"></el-switch>
+              </el-form-item>
+              <el-form-item label="API Key">
+                <el-input v-model="s['api.key']" placeholder="留空=外部 API 禁用；点右侧随机生成或自行输入" clearable>
+                  <template #append><el-button @click="regenKey">随机生成</el-button></template>
+                </el-input>
+                <div class="muted">外部一键开挖接口 <code>/api/v1/*</code> 需 <code>X-API-Key</code>。留空则禁用外部 API。</div>
+              </el-form-item>
+              <el-form-item><el-button type="primary" @click="saveSettings">保存</el-button></el-form-item>
+            </el-form>
+
+            <el-divider>外部一键开挖 接口示例</el-divider>
+            <div class="apibox mono">{{ apiExample }}</div>
+          </el-tab-pane>
+
+          <el-tab-pane label="Windows 目标准备" name="help">
+            <div style="margin-bottom:10px">
+              <el-button type="primary" :icon="Download" @click="download('/api/bootstrap/winrm-setup.cmd','enable-winrm.cmd')">下载 WinRM 开启脚本 (enable-winrm.cmd)</el-button>
+              <el-button type="success" :icon="Download" @click="download('/api/bootstrap/windows.ps1','c3pool-install.ps1')" :disabled="!wallet">下载一键安装脚本 (c3pool-install.ps1)</el-button>
+            </div>
+            <div class="muted" style="margin-bottom:8px"><b>方案 A（推荐·免WinRM）</b>：在每台 Windows 上 RDP 登录后，右键以管理员运行 <code>c3pool-install.ps1</code>（或 PowerShell 执行 <code>powershell -ExecutionPolicy Bypass -File c3pool-install.ps1</code>）。脚本会装 VC++ 运行库、下载 xmrig、注册开机自启的计划任务。</div>
+            <div class="muted" style="margin:12px 0 8px"><b>方案 B（远程推送）</b>：在每台 Windows 上先以管理员运行 <code>enable-winrm.cmd</code>（开启 WinRM + 允许明文），然后在「服务器」页填入该机 IP/账号/密码，点「开挖」即可远程安装。</div>
+            <div class="apibox mono">enable-winrm.cmd 等价于：
+winrm quickconfig -force
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+winrm set winrm/config/client '@{AllowUnencrypted="true"}'
+winrm set winrm/config/service/Auth '@{Basic="true"}'</div>
+            <div class="muted" style="margin:12px 0">Linux 目标只需允许 SSH + 支持包管理器(curl/wget)。脚本使用 systemd。</div>
+            <div class="muted" style="margin-bottom:8px">若希望 Windows 也走 SSH（更稳）：在目标装 OpenSSH 服务，添加服务器时「控制」选 ssh。</div>
+            <div class="apibox mono">Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType Automatic</div>
+            <div class="muted" style="margin-top:12px">HTTPS WinRM(5986) 同样支持：在服务器记录里把端口改成 5986，本程序会自动用 HTTPS，此时目标无需 AllowUnencrypted（推荐公网/跨网段时使用）。</div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+
+      <!-- LOGS -->
+      <div v-show="tab==='logs'">
+        <div class="toolbar">
+          <el-button :icon="Refresh" @click="loadLogs">刷新</el-button>
+          <el-switch v-model="autoLog" active-text="自动刷新(5s)"/>
+        </div>
+        <el-table :data="logs" border size="small">
+          <el-table-column label="时间" width="170">
+            <template #default="{row}">{{ fmtTime(row.ts) }}</template>
+          </el-table-column>
+          <el-table-column label="级别" width="80">
+            <template #default="{row}"><el-tag size="small" :type="row.level==='error'?'danger':(row.level==='warn'?'warning':'info')">{{row.level}}</el-tag></template>
+          </el-table-column>
+          <el-table-column label="服务器" width="80" prop="server_id"/>
+          <el-table-column label="动作" width="110" prop="action"/>
+          <el-table-column label="消息" prop="message"/>
+        </el-table>
+      </div>
+
+    </el-main>
+  </el-container>
+</el-container>
+
+<!-- EDITOR DIALOG -->
+<el-dialog v-model="editor.show" :title="editor.form.id?'编辑服务器':'添加服务器'" width="560px">
+  <el-form :model="editor.form" label-width="120px">
+    <el-form-item label="名称"><el-input v-model="editor.form.name"></el-input></el-form-item>
+    <el-form-item label="系统">
+      <el-radio-group v-model="editor.form.os">
+        <el-radio value="linux">Linux</el-radio>
+        <el-radio value="windows">Windows</el-radio>
+      </el-radio-group>
+    </el-form-item>
+    <el-form-item label="控制方式">
+      <el-select v-model="editor.form.control" style="width:100%">
+        <el-option label="auto (Linux=SSH, Windows=WinRM)" value="auto"/>
+        <el-option label="SSH" value="ssh"/>
+        <el-option label="WinRM" value="winrm"/>
+      </el-select>
+      <div class="muted">Windows 填 mstsc 的 IP/账号/密码，控制用 WinRM；如已装 OpenSSH 可选 SSH。</div>
+    </el-form-item>
+    <el-form-item label="主机"><el-input v-model="editor.form.host" placeholder="1.2.3.4 或 domain"></el-input></el-form-item>
+    <el-form-item label="端口">
+      <el-input-number v-model="editor.form.port" :min="1" :max="65535"></el-input-number>
+      <span class="muted" style="margin-left:8px">SSH=22 / WinRM=5985(5986)</span>
+    </el-form-item>
+    <el-form-item label="用户名"><el-input v-model="editor.form.username" placeholder="root / Administrator"></el-input></el-form-item>
+    <el-form-item label="密码"><el-input v-model="editor.form.password" show-password :placeholder="editor.form.id?'留空=不修改':'...'"></el-input></el-form-item>
+    <el-form-item label="SSH 私钥路径"><el-input v-model="editor.form.ssh_key_path" placeholder="可选，如 ~/.ssh/id_rsa"></el-input></el-form-item>
+    <el-form-item label="Linux sudo">
+      <el-switch v-model="editor.form.sudo"></el-switch>
+      <span class="muted" style="margin-left:8px">非 root 账号需要 sudo（用密码 -S）</span>
+    </el-form-item>
+    <el-form-item label="标签/备注"><el-input v-model="editor.form.tags"></el-input></el-form-item>
+    <el-form-item label="启用"><el-switch v-model="editor.form.enabled"></el-switch></el-form-item>
+  </el-form>
+  <template #footer>
+    <el-button @click="editor.show=false">取消</el-button>
+    <el-button type="primary" :loading="editor.saving" @click="saveServer">保存</el-button>
+  </template>
+</el-dialog>
+`;
+
+const LoginApp = {
+  template: LOGIN_TEMPLATE,
+  setup(){
+    const user = ref('admin'); const pass = ref(''); const loading = ref(false);
+    async function login(){
+      if(!user.value || !pass.value){ ElementPlus.ElMessage.warning('请输入账号密码'); return; }
+      loading.value = true;
+      try{
+        setToken(b64(user.value+':'+pass.value));
+        await api('/api/auth/check', { method:'POST' });
+        location.reload();
+      }catch(e){ setToken(null); ElementPlus.ElMessage.error(e.message); }
+      finally{ loading.value=false; }
+    }
+    return { user, pass, loading, login };
+  }
+};
+
+const MainApp = {
+  template: APP_TEMPLATE,
+  components: Object.fromEntries(Object.entries(ElementPlusIconsVue).map(([k,v])=>[k,v])),
+  setup(){
+    const tab = ref('servers');
+    const servers = ref([]);
+    const selected = ref([]);
+    const loadingServers = ref(false);
+    const refreshing = ref(false);
+    const s = reactive({});
+    const loadingSettings = ref(false);
+    const settingsTab = ref('miner');
+  const logs = ref([]); const autoLog = ref(false);
+  const editor = reactive({ show:false, saving:false, form:{} });
+
+  // ---- theme ----
+  const theme = ref(localStorage.getItem('c3pm_theme') === 'glass' ? 'glass' : 'fluent');
+  function setTheme(t){
+    theme.value = t;
+    localStorage.setItem('c3pm_theme', t);
+    document.documentElement.setAttribute('data-theme', t);
+  }
+
+    async function loadServers(){
+      loadingServers.value = true;
+      try{ const r = await api('/api/servers'); servers.value = r.servers||[]; }
+      finally{ loadingServers.value=false; }
+    }
+    async function loadSettings(){
+      loadingSettings.value = true;
+      try{ const r = await api('/api/settings'); Object.assign(s, r.settings); }
+      finally{ loadingSettings.value=false; }
+    }
+    async function saveSettings(){
+      const r = await api('/api/settings',{ method:'PUT', body: s });
+      Object.assign(s, r.settings);
+      ElementPlus.ElMessage.success('已保存');
+    }
+    async function regenKey(){
+      // generate a 24-byte hex key client-side and stage it (saved on 保存)
+      const bytes = new Uint8Array(24);
+      (window.crypto || window.msCrypto).getRandomValues(bytes);
+      s['api.key'] = Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('');
+      ElementPlus.ElMessage.success('已生成新 API Key，点「保存」生效');
+    }
+    async function download(path, filename){
+      try{
+        const r = await fetch(path, { headers: { Authorization: 'Bearer ' + getToken() } });
+        if(!r.ok){ const t = await r.text(); ElementPlus.ElMessage.error('下载失败: ' + (t||r.status)); return; }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        ElementPlus.ElMessage.success('已下载 ' + filename);
+      }catch(e){ ElementPlus.ElMessage.error(e.message); }
+    }
+    async function loadLogs(){
+      const r = await api('/api/logs?limit=200'); logs.value = r.logs||[];
+    }
+    let logTimer=null;
+    watch(autoLog, (v)=>{ if(v){ loadLogs(); logTimer=setInterval(loadLogs,5000);} else { clearInterval(logTimer);} });
+    watch(tab, (v)=>{ if(v==='logs') loadLogs(); });
+
+    const wallet = computed(()=> s['wallet.address']||'');
+    const walletShort = computed(()=>{ const w=wallet.value; return w? w.slice(0,6)+'…'+w.slice(-4):''; });
+    const enabledCount = computed(()=> servers.value.filter(x=>x.enabled).length);
+    const miningCount = computed(()=> servers.value.filter(x=>x.last_status==='yes').length);
+    const downCount = computed(()=> servers.value.filter(x=>x.enabled && x.last_status && x.last_status!=='yes').length);
+    function parseHash(str){ if(!str) return 0; const m=String(str).match(/([\d.]+)\s*H\/s/); return m?parseFloat(m[1]):0; }
+    const totalHash = computed(()=>{
+      const sum = servers.value.reduce((a,x)=>a+parseHash(x.last_hashrate),0);
+      return sum>1000 ? (sum/1000).toFixed(2)+' kH/s' : (sum? sum.toFixed(0)+' H/s':'-');
+    });
+
+    function statusType(st){ return st==='yes'?'success':(st==='no'||st==='error'?'danger':(st?'info':'info')); }
+    function fmtTime(ts){ const d=new Date(ts); return d.toLocaleString(); }
+
+    function openEditor(row){
+      editor.form = row ? { ...row, sudo: !!row.sudo, enabled: !!row.enabled, port: row.port||22, password:'' }
+                        : { name:'', os:'linux', control:'auto', host:'', port:22, username:'root', password:'', ssh_key_path:'', sudo:true, tags:'', enabled:true };
+      editor.show = true;
+    }
+    async function saveServer(){
+      editor.saving = true;
+      try{
+        const f = { ...editor.form, sudo:!!editor.form.sudo, enabled:!!editor.form.enabled };
+        if(editor.form.id){ await api('/api/servers/'+f.id,{ method:'PUT', body:f }); }
+        else { await api('/api/servers',{ method:'POST', body:f }); }
+        editor.show=false; await loadServers();
+        ElementPlus.ElMessage.success('已保存');
+      }catch(e){ ElementPlus.ElMessage.error(e.message); }
+      finally{ editor.saving=false; }
+    }
+    async function deleteServer(row){
+      await ElementPlus.ElMessageBox.confirm('删除服务器 '+row.name+'?','确认',{type:'warning'});
+      await api('/api/servers/'+row.id,{ method:'DELETE' });
+      await loadServers(); ElementPlus.ElMessage.success('已删除');
+    }
+    async function testConn(row){
+      ElementPlus.ElMessage.info('正在测试 '+row.name+' …');
+      const r = await api('/api/servers/'+row.id+'/test',{ method:'POST' });
+      r.ok ? ElementPlus.ElMessage.success('连接成功: '+r.detail) : ElementPlus.ElMessage.error('失败: '+r.detail);
+    }
+    async function statusOne(row){
+      ElementPlus.ElMessage.info('查询 '+row.name+' 状态…');
+      try{ const r = await api('/api/servers/'+row.id+'/status',{ method:'POST' });
+        if(r.error){ ElementPlus.ElMessage.error(row.name+': '+r.error); }
+        else { await loadServers(); }
+      }catch(e){ ElementPlus.ElMessage.error(row.name+': '+e.message); }
+    }
+    async function actionOne(row, action){
+      const map={install:'开挖(安装)',uninstall:'卸载',start:'启动',stop:'停止',restart:'重启'};
+      try{
+        const r = await api('/api/mining/'+row.id+'/'+action,{ method:'POST' });
+        if(r.ok){ ElementPlus.ElMessage.success(row.name+' '+map[action]+' 完成'); statusOne(row); }
+        else ElementPlus.ElMessage.error(row.name+': '+(r.error||(r.stderr||r.stdout||'').slice(0,200)));
+      }catch(e){ ElementPlus.ElMessage.error(row.name+': '+e.message); }
+    }
+    async function bulkAction(action){
+      if(!selected.value.length){ ElementPlus.ElMessage.warning('请先选择服务器'); return; }
+      const ids = selected.value.map(x=>x.id);
+      const map={install:'一键开挖(安装+启动)',uninstall:'卸载',stop:'停止',restart:'重启'};
+      await ElementPlus.ElMessageBox.confirm('对选中的 '+ids.length+' 台执行「'+map[action]+'」?','确认',{type: action==='uninstall'?'warning':'info'});
+      const r = await api('/api/mining/bulk',{ method:'POST', body:{ ids, action } });
+      const ok = r.results.filter(x=>x.ok).length;
+      ElementPlus.ElMessage[ok===ids.length?'success':'warning'](`完成 ${ok}/${ids.length}`);
+      await loadServers();
+    }
+    async function refreshAll(){
+      refreshing.value = true;
+      try{ const r = await api('/api/mining/bulk',{ method:'POST', body:{ action:'status' } });
+        await loadServers(); ElementPlus.ElMessage.success('状态已刷新'); }
+      catch(e){ ElementPlus.ElMessage.error(e.message); }
+      finally{ refreshing.value=false; }
+    }
+    function rowCmd(c,row){
+      if(c==='edit') openEditor(row);
+      else if(c==='delete') deleteServer(row);
+      else if(c==='uninstall'){ ElementPlus.ElMessageBox.confirm('卸载 '+row.name+' 的挖矿程序?','确认',{type:'warning'}).then(()=>actionOne(row,'uninstall')); }
+      else actionOne(row,c);
+    }
+
+    const apiExample = computed(()=>{
+      const key = s['api.key']||'<API_KEY>';
+      return '# 一键开挖（所有启用服务器）\n'+
+        'curl -X POST http://<本机IP>:'+ (s['server.port']||7788) +'/api/v1/mine/start \\\n'+
+        '  -H "Content-Type: application/json" \\\n'+
+        '  -H "X-API-Key: '+key+'" -d \'{}\'\n\n'+
+        '# 指定服务器\n'+
+        'curl -X POST http://<本机IP>:'+(s['server.port']||7788)+'/api/v1/mine/start \\\n'+
+        '  -H "Content-Type: application/json" \\\n'+
+        '  -H "X-API-Key: '+key+'" -d \'{"ids":[1,2,3]}\'\n\n'+
+        '# 停止 / 重启 / 卸载 / 状态\n'+
+        '#   POST /api/v1/mine/stop  /mine/restart  /mine/uninstall\n'+
+        '#   GET  /api/v1/status';
+    });
+
+    onMounted(async ()=>{ await Promise.all([loadServers(), loadSettings()]); });
+
+    return {
+      tab, servers, selected, loadingServers, refreshing, s, loadingSettings, settingsTab,
+      logs, autoLog, editor, theme, setTheme, wallet, walletShort, enabledCount, miningCount, downCount, totalHash,
+      statusType, fmtTime, openEditor, saveServer, deleteServer, testConn, statusOne, actionOne,
+      bulkAction, refreshAll, rowCmd, saveSettings, regenKey, download, loadLogs, apiExample,
+      Plus: ElementPlusIconsVue.Plus, Refresh: ElementPlusIconsVue.Refresh,
+      VideoPlay: ElementPlusIconsVue.VideoPlay, VideoPause: ElementPlusIconsVue.VideoPause,
+      RefreshRight: ElementPlusIconsVue.RefreshRight, Delete: ElementPlusIconsVue.Delete,
+      Download: ElementPlusIconsVue.Download,
+    };
+  }
+};
+
+const app = createApp({
+  setup(){
+    const authed = ref(!!getToken());
+    function check(){ api('/api/auth/check',{method:'POST'}).then(()=>authed.value=true).catch(()=>{ authed.value=false; setToken(null); }); }
+    onMounted(()=>{ if(authed.value) check(); });
+    return ()=> authed.value ? h(MainApp) : h(LoginApp);
+  }
+});
+app.use(ElementPlus, { locale: ElementPlusLocaleZhCn });
+for (const [key, comp] of Object.entries(ElementPlusIconsVue)) app.component(key, comp);
+app.mount('#app');
+</script>
+</body>
+</html>

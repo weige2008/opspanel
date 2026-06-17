@@ -1,0 +1,21 @@
+{
+  "name": "opspanel",
+  "version": "1.0.0",
+  "description": "OpsPanel — a web control plane for managing fleets of Windows/Linux servers. First module: batch Monero mining via c3pool.org (one-click install/start, watchdog auto-mining, WinRM/SSH control, REST API).",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --experimental-sqlite server/index.js",
+    "dev": "node --experimental-sqlite server/index.js",
+    "test": "node --experimental-sqlite -e \"require('./server/db'); require('./server'); console.log('syntax-ok')\""
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-async-handler": "^1.2.0",
+    "ssh2": "^1.15.0"
+  },
+  "license": "MIT"
+}
