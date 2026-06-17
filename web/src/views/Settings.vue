@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { api, getToken } from '../api.js';
 import { toast } from '../toast.js';
+import { validateAddress } from '../xmr.js';
 import Icon from '../components/Icon.vue';
 import Btn from '../components/ui/Btn.vue';
 import Field from '../components/ui/Field.vue';
@@ -11,11 +12,22 @@ const s = reactive({});
 const tab = ref('miner');
 const loading = ref(false);
 
+// live wallet validation (format + Monero checksum)
+const walletCheck = computed(() => {
+  const v = s['wallet.address'];
+  if (!v || !String(v).trim()) return null;
+  return validateAddress(String(v));
+});
+
 async function load() {
   loading.value = true;
   try { Object.assign(s, await api.getSettings()); } finally { loading.value = false; }
 }
 async function save() {
+  if (s['wallet.address'] && walletCheck.value && !walletCheck.value.valid) {
+    toast.err('钱包地址无效：' + walletCheck.value.reason);
+    return;
+  }
   try { Object.assign(s, await api.saveSettings({ ...s })); toast.ok('设置已保存'); }
   catch (e) { toast.err(e.response?.data?.error || e.message); }
 }
@@ -80,7 +92,15 @@ onMounted(load);
 
     <!-- mining -->
     <div v-show="tab==='miner'" class="glass p-6 max-w-3xl space-y-5">
-      <Field v-model="s['wallet.address']" label="XMR 钱包地址" placeholder="48Bhi...（必填，收益打入此地址）" mono />
+      <div>
+        <Field v-model="s['wallet.address']" label="XMR 钱包地址" placeholder="48Bhi...（必填，收益打入此地址）" mono />
+        <div v-if="walletCheck" class="mt-2 flex items-center gap-2">
+          <span class="badge" :class="walletCheck.valid ? 'badge-ok' : 'badge-err'">
+            <Icon :name="walletCheck.valid ? 'check' : 'x'" :size="14" /> {{ walletCheck.reason }}
+          </span>
+          <span v-if="walletCheck.valid" class="text-[12px] text-muted">{{ walletCheck.network }}{{ walletCheck.integrated ? ' · 集成地址' : ' · 标准地址' }}</span>
+        </div>
+      </div>
       <div class="grid sm:grid-cols-2 gap-4">
         <Field v-model="s['pool.url']" label="矿池 Stratum" />
         <Field v-model="s['pool.url.backup']" label="备用矿池" hint="可空" />
