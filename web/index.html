@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="fluent">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="OpsPanel — 面向 Windows/Linux 服务器机群的 Web 控制台与 REST API。模块化运维，第一模块：C3Pool 批量挖矿。" />
+  <title>OpsPanel — 服务器管理控制台</title>
+  <script>
+    // Apply theme before paint (no FOUC).
+    (function () {
+      var t = localStorage.getItem('opspanel_theme');
+      if (t !== 'glass') t = 'fluent';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

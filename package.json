@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node --experimental-sqlite server/index.js",
     "dev": "node --experimental-sqlite server/index.js",
+    "build:web": "cd web && npm install && npm run build",
     "test": "node --experimental-sqlite -e \"require('./server/db'); require('./server'); console.log('syntax-ok')\""
   },
   "engines": {

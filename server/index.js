@@ -8,8 +8,13 @@ const app = express();
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// --- serve frontend (Vue SPA, no build step) -------------------------------
-const CLIENT_DIR = path.join(__dirname, '..', 'client');
+// --- serve frontend (Vue + Vite build -> web/dist) --------------------------
+const CLIENT_DIR = path.join(__dirname, '..', 'web', 'dist');
+const INDEX_FILE = path.join(CLIENT_DIR, 'index.html');
+if (!fs.existsSync(INDEX_FILE)) {
+  // eslint-disable-next-line no-console
+  console.warn(`[opspanel] 前端尚未构建：${INDEX_FILE} 不存在。\n  请在 web/ 目录运行: npm install && npm run build\n  API 仍可正常使用。`);
+}
 app.use(express.static(CLIENT_DIR, { index: false }));
 
 // --- basic web auth (the management API uses user/password from settings) --
@@ -61,10 +66,11 @@ app.use('/api/bootstrap', webAuth, require('./routes/bootstrap'));
 // --- mount external api (api-key authed, internal) -------------------------
 app.use('/api/v1', require('./routes/api'));
 
-// SPA fallback
+// SPA fallback (history-mode routing for the Vue app)
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  res.sendFile(path.join(CLIENT_DIR, 'index.html'), (err) => {
+  if (!fs.existsSync(INDEX_FILE)) return res.status(404).type('text').send('Frontend not built. Run `npm run build` in web/.');
+  res.sendFile(INDEX_FILE, (err) => {
     if (err) next(err);
   });
 });

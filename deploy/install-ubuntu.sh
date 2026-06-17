@@ -15,40 +15,42 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-echo "==> [1/7] 安装系统依赖 (curl, git, ca-certificates)"
+echo "==> [1/8] 安装系统依赖 (curl, git, ca-certificates)"
 apt-get update -y
 apt-get install -y curl git ca-certificates
 
-echo "==> [2/7] 安装 Node.js 22 (NodeSource) — node:sqlite 需要 >= 22.5"
+echo "==> [2/8] 安装 Node.js 22 (NodeSource) — node:sqlite 需要 >= 22.5"
 if ! command -v node >/dev/null 2>&1 || ! node -v 2>/dev/null | grep -qE '^v(2[2-9]|[3-9])'; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt-get install -y nodejs
 fi
 echo "    node: $(node -v)   npm: $(npm -v)"
 
-echo "==> [3/7] 创建服务用户与目录: $APP_DIR"
+echo "==> [3/8] 创建服务用户与目录: $APP_DIR"
 if ! id -u "$SERVICE_USER" >/dev/null 2>&1; then
   useradd --system --no-create-home --shell /usr/sbin/nologin "$SERVICE_USER"
 fi
 mkdir -p "$APP_DIR/data"
 
-echo "==> [4/7] 同步项目文件到 $APP_DIR"
+echo "==> [4/8] 同步项目文件到 $APP_DIR"
 # cp is always available (rsync would need an extra dep).
 cp -a "$SRC_DIR"/. "$APP_DIR"/
 rm -rf "$APP_DIR/node_modules"
 chown -R "$SERVICE_USER":"$SERVICE_USER" "$APP_DIR"
 
-echo "==> [5/7] 安装 npm 依赖"
+echo "==> [5/8] 安装 npm 依赖（后端 + 前端）"
 # Service user is nologin; run via an explicit bash -c.
-sudo -u "$SERVICE_USER" -H bash -c "cd '$APP_DIR' && npm install --omit=dev --no-audit --no-fund"
+sudo -u "$SERVICE_USER" -H bash -c "cd '$APP' && npm install --omit=dev --no-audit --no-fund"
+# Frontend needs devDeps to build, so install normally then build.
+sudo -u "$SERVICE_USER" -H bash -c "export HOME=/home/$SERVICE_USER; cd '$APP/web' && npm install --no-audit --no-fund && npm run build"
 
-echo "==> [6/7] 注册并启动 systemd 服务"
+echo "==> [6/8] 注册并启动 systemd 服务"
 install -m 644 "$APP_DIR/deploy/opspanel.service" "/etc/systemd/system/${SERVICE_NAME}.service"
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service"
 systemctl restart "${SERVICE_NAME}.service"
 
-echo "==> [7/7] 放行防火墙端口 ${PORT_DEFAULT}"
+echo "==> [7/8] 放行防火墙端口 ${PORT_DEFAULT}"
 # Only touch ufw if it is already enabled (avoid locking out SSH).
 if command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
   ufw allow "${PORT_DEFAULT}/tcp"
