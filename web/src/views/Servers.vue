@@ -7,12 +7,14 @@ import Btn from '../components/ui/Btn.vue';
 import Field from '../components/ui/Field.vue';
 import Switch from '../components/ui/Switch.vue';
 import Modal from '../components/ui/Modal.vue';
+import WindowsPrep from '../components/WindowsPrep.vue';
 
 const servers = ref([]);
 const selected = ref([]);
 const loading = ref(false);
 const editor = ref({ open: false, saving: false, form: blank() });
 const confirmUninstall = ref({ open: false, row: null });
+const helpOpen = ref(false);
 const busy = ref({}); // id -> true while an action runs
 
 function blank() {
@@ -121,6 +123,7 @@ async function bulk(action, label) {
       <Btn variant="primary" icon="plus" @click="openEditor()">添加服务器</Btn>
       <div class="h-6 w-px mx-1" style="background:var(--border-soft);"></div>
       <Btn icon="refresh" :loading="loading" @click="refreshAll">刷新状态</Btn>
+      <Btn icon="monitor" @click="helpOpen = true">如何连接 Windows</Btn>
       <template v-if="selected.length">
         <div class="h-6 w-px mx-1" style="background:var(--border-soft);"></div>
         <span class="text-[12.5px] text-muted">已选 {{ selected.length }} 台</span>
@@ -215,6 +218,14 @@ async function bulk(action, label) {
       <template #footer>
         <Btn @click="confirmUninstall.open=false">取消</Btn>
         <Btn variant="danger" icon="trash" @click="confirmUninstall.open=false; run(confirmUninstall.row.id, 'uninstall', '卸载')">确认卸载</Btn>
+      </template>
+    </Modal>
+
+    <!-- Windows onboarding helper -->
+    <Modal :open="helpOpen" title="如何连接 Windows 服务器" wide @close="helpOpen=false">
+      <WindowsPrep />
+      <template #footer>
+        <Btn variant="primary" @click="helpOpen=false">知道了</Btn>
       </template>
     </Modal>
   </div>
