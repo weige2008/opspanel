@@ -108,7 +108,7 @@ onMounted(load);
               :class="s['miner.method']!=='c3pool' ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--border-soft)] bg-[var(--fill)]'"
               @click="s['miner.method']='custom'">
               <div class="font-semibold text-sm flex items-center gap-2"><Icon name="cpu" :size="15" /> 自定义安装器</div>
-              <div class="text-[12px] text-muted mt-1">GitHub xmrig + 我们的控制/watchdog，完全可控、换钱包批量重装</div>
+              <div class="text-[12px] text-muted mt-1">GitHub xmrig + 控制/watchdog + huge pages/MSR 算力调优，完全可控、换钱包批量重装</div>
             </button>
             <button type="button" class="text-left p-3.5 rounded-[12px] border transition-all"
               :class="s['miner.method']==='c3pool' ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--border-soft)] bg-[var(--fill)]'"

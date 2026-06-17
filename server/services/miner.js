@@ -65,6 +65,20 @@ case "$ARCH" in
 esac
 URL="https://github.com/xmrig/xmrig/releases/download/v${ctx.version}/xmrig-${ctx.version}-${REL}.tar.gz"
 mkdir -p "$DIR"
+
+# --- performance tuning: MSR module + transparent huge pages + reserved huge pages ---
+modprobe msr 2>/dev/null || true
+echo 'msr' > /etc/modules-load.d/xmrig-msr.conf 2>/dev/null || true
+[ -w /sys/kernel/mm/transparent_hugepage/enabled ] && echo always > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+[ -w /sys/kernel/mm/transparent_hugepage/defrag ] && echo always > /sys/kernel/mm/transparent_hugepage/defrag 2>/dev/null || true
+MEMMB=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)
+HP=$(( MEMMB / 2048 ))   # ~2GB worth of 2MB huge pages (RandomX working set)
+if [ "$HP" -gt 0 ] && [ "$HP" -lt 4000 ]; then
+  sysctl -w vm.nr_hugepages=$HP >/dev/null 2>&1 || true
+  echo "vm.nr_hugepages=$HP" > /etc/sysctl.d/99-xmrig.conf 2>/dev/null || true
+fi
+echo "TUNE: msr=$(lsmod | grep -c '^msr ' || echo 0) thp=$(cat /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null | cut -d']' -f2 | cut -d'[' -f1) hugepages=$HP"
+
 cd /tmp
 ( command -v curl >/dev/null && curl -L --retry 5 -o xmrig.tar.gz "$URL" ) || wget -q -O xmrig.tar.gz "$URL"
 tar xzf xmrig.tar.gz
@@ -257,6 +271,27 @@ ${ctx.apiPort > 0 ? `$json['http']=[ordered]@{ enabled=$true; host='127.0.0.1'; 
 ` : ''}
 $cfgText = $json | ConvertTo-Json -Depth 10 -Compress
 [System.IO.File]::WriteAllText("$dir\\config.json", $cfgText, (New-Object System.Text.UTF8Encoding($false)))
+
+# 3b) Performance tuning: grant 'Lock pages in memory' to SYSTEM & Administrators
+#     so xmrig can use large pages (big RandomX speedup). Only this one right is
+#     touched; secedit leaves all other user-rights assignments untouched.
+try {
+  $inf = @'
+[Unicode]
+Unicode=yes
+[Version]
+signature="$CHICAGO$"
+Revision=1
+[Privilege Rights]
+SeLockMemoryPrivilege = *S-1-5-18,*S-1-5-32-544
+'@
+  $infPath = Join-Path $env:TEMP 'opspanel_secpol.inf'
+  [System.IO.File]::WriteAllText($infPath, $inf, (New-Object System.Text.UnicodeEncoding($false)))
+  $db = Join-Path $env:TEMP 'opspanel_secpol.sdb'
+  $p = Start-Process -FilePath 'secedit.exe' -ArgumentList '/configure','/db',"$db",'/cfg',"$infPath",'/quiet' -Wait -PassThru -WindowStyle Hidden
+  Write-Output ("TUNE: SeLockMemoryPrivilege secedit exit=" + $p.ExitCode)
+  # MSR: xmrig auto-loads its WinRing0 driver when running elevated (SYSTEM).
+} catch { Write-Output 'TUNE: secedit skipped' }
 
 # 4) Write the watchdog launcher (decoded from base64).
 [System.IO.File]::WriteAllText("$dir\\watchdog.ps1", [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${wdB64}')), (New-Object System.Text.UTF8Encoding($false)))
