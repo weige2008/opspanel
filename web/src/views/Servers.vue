@@ -18,6 +18,23 @@ const busy = ref({}); // id -> true while an action runs
 function blank() {
   return { name: '', os: 'linux', control: 'auto', host: '', port: 22, username: 'root', password: '', ssh_key_path: '', sudo: true, tags: '', enabled: true, id: null };
 }
+// When the OS is picked in the editor, switch to that OS's conventional
+// defaults — but only for fields the user hasn't customised.
+function pickOs(os) {
+  const f = editor.value.form;
+  const customUser = f.username && !['', 'root', 'Administrator'].includes(f.username);
+  const customPort = f.port && ![22, 5985, 5986].includes(Number(f.port));
+  f.os = os;
+  if (os === 'windows') {
+    if (!customUser) f.username = 'Administrator';
+    if (!customPort) f.port = 5985;
+    f.sudo = false;
+  } else {
+    if (!customUser) f.username = 'root';
+    if (!customPort) f.port = 22;
+    f.sudo = true;
+  }
+}
 async function load() {
   loading.value = true;
   try { servers.value = await api.listServers(); } finally { loading.value = false; }
@@ -164,7 +181,7 @@ async function bulk(action, label) {
           <span class="field-label">系统</span>
           <div class="flex gap-2">
             <button v-for="o in ['linux','windows']" :key="o" type="button" class="btn btn-sm flex-1"
-                    :class="editor.form.os===o?'btn-primary':'btn-ghost'" @click="editor.form.os=o">{{ o==='linux'?'Linux':'Windows' }}</button>
+                    :class="editor.form.os===o?'btn-primary':'btn-ghost'" @click="pickOs(o)">{{ o==='linux'?'Linux':'Windows' }}</button>
           </div>
         </div>
         <div>
