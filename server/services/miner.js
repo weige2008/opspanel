@@ -88,9 +88,10 @@ cat > "$DIR/config.json" <<JSON
 {
   "api": {"id": null, "worker-id": null},
   ${apiBlock}
-  "cpu": true,
+  "cpu": {"huge-pages": true, "huge-pages-jit": true, "memory-pool": true, "priority": null, "max-threads-hint": null},
   "opencl": false,
   "cuda": false,
+  "randomx": {"init": -1, "mode": "auto", "wrmsr": true, "numa": true},
   "pools": [
     {"url":"$POOL","user":"$WALLET","pass":"x","keepalive":true,"tls":${tlsFlag}}
     ${backup}
@@ -257,9 +258,10 @@ if(-not $xmrig){ throw 'xmrig.exe not found after extract' }
 # 3) Build config (with log-file so xmrig output is captured) and write UTF-8 NO BOM.
 $json = [ordered]@{
   api  = [ordered]@{ id=$null; 'worker-id'=$null }
-  cpu  = $true
+  cpu  = [ordered]@{ 'huge-pages'=$true; 'huge-pages-jit'=$true; 'memory-pool'=$true; 'priority'=$null; 'max-threads-hint'=$null }
   opencl = $false
   cuda   = $false
+  randomx = [ordered]@{ init=-1; mode='auto'; wrmsr=$true; numa=$true }
   'log-file' = (Join-Path $dir 'xmrig.log')
   'print-time' = 30
   pools = @(
