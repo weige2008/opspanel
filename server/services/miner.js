@@ -12,7 +12,8 @@ function buildContext() {
   const poolUrl = (getSetting('pool.url') || 'auto.c3pool.org:19999').trim();
   const poolBackup = (getSetting('pool.url.backup') || '').trim();
   const tls = getSetting('pool.tls') === 'true';
-  const version = (getSetting('xmrig.version') || '6.21.3').trim();
+  const build = (getSetting('miner.build') || 'xmrig-c3').trim().toLowerCase() === 'xmrig' ? 'xmrig' : 'xmrig-c3';
+  const version = (getSetting('xmrig.version') || (build === 'xmrig-c3' ? '6.26.0-C4' : '6.21.3')).trim();
   const apiPort = parseInt(getSetting('miner.api_port') || '18088', 10);
   const extraArgs = (getSetting('miner.extra_args') || '').trim();
   // install method: 'custom' (our installer) | 'c3pool' (official c3pool one-liner)
@@ -25,7 +26,7 @@ function buildContext() {
   if (cpuPriority) tuningParts.push(`--cpu-priority=${cpuPriority}`);
   if (extraArgs) tuningParts.push(extraArgs);
   const tuningArgs = tuningParts.join(' ').trim();
-  return { wallet, poolUrl, poolBackup, tls, version, apiPort, extraArgs, method, cpuMax, cpuPriority, tuningArgs };
+  return { wallet, poolUrl, poolBackup, tls, build, version, apiPort, extraArgs, method, cpuMax, cpuPriority, tuningArgs };
 }
 
 function walletArg(ctx, worker) {
@@ -57,13 +58,16 @@ WALLET="${user}"
 POOL="${pool}"
 DIR="${LINUX_DIR}"
 SVC="${SERVICE_NAME}"
-ARCH=$(uname -m)
-case "$ARCH" in
-  x86_64|amd64) REL="linux-static-x64";;
-  aarch64|arm64) REL="linux-static-arm64";;
-  *) echo "Unsupported arch $ARCH"; exit 11;;
-esac
-URL="https://github.com/xmrig/xmrig/releases/download/v${ctx.version}/xmrig-${ctx.version}-${REL}.tar.gz"
+if [ "${ctx.build}" = "xmrig-c3" ]; then
+  URL="https://github.com/C3Pool/xmrig-C3/releases/download/v${ctx.version}/xmrig-v${ctx.version}-linux-Static.tar.gz"
+else
+  case "$ARCH" in
+    x86_64|amd64) REL="linux-static-x64";;
+    aarch64|arm64) REL="linux-static-arm64";;
+    *) echo "Unsupported arch $ARCH"; exit 11;;
+  esac
+  URL="https://github.com/xmrig/xmrig/releases/download/v${ctx.version}/xmrig-${ctx.version}-${REL}.tar.gz"
+fi
 mkdir -p "$DIR"
 
 # --- performance tuning: MSR module + transparent huge pages + reserved huge pages ---
@@ -243,8 +247,12 @@ if($vcNeeded){
   } catch { Write-Output 'VC++ redist install failed (continue anyway).' }
 }
 
-# 2) Download xmrig (msvc win64) with retry.
-$url="https://github.com/xmrig/xmrig/releases/download/v$ver/xmrig-$ver-msvc-win64.zip"
+# 2) Download xmrig with retry (c3pool fork or vanilla).
+if('${ctx.build}' -eq 'xmrig-c3'){
+  $url="https://github.com/C3Pool/xmrig-C3/releases/download/v$ver/xmrig-v$ver-win64.zip"
+}else{
+  $url="https://github.com/xmrig/xmrig/releases/download/v$ver/xmrig-$ver-msvc-win64.zip"
+}
 $zip="$dir\\xmrig.zip"
 $ok=$false
 for($i=1;$i -le 3 -and -not $ok;$i++){

@@ -74,8 +74,10 @@ const DEFAULTS = {
   'pool.url': 'auto.c3pool.org:19999',
   'pool.url.backup': 'auto.c3pool.org:14444',
   'pool.tls': 'false',
-  // xmrig release (static linux + msvc windows share the same version)
-  'xmrig.version': '6.21.3',
+  // xmrig build: 'xmrig-c3' (c3pool's GPL fork, github.com/C3Pool/xmrig-C3) | 'xmrig' (vanilla)
+  'miner.build': 'xmrig-c3',
+  // xmrig release version (must match the chosen build's tagging)
+  'xmrig.version': '6.26.0-C4',
   // xmrig worker label suffix template, blank = use hostname
   'miner.worker': '',
   // install method: 'custom' (our installer) | 'c3pool' (official c3pool one-liner)

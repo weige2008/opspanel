@@ -36,6 +36,15 @@ function regenKey() {
   s['api.key'] = Array.from(b).map((x) => x.toString(16).padStart(2, '0')).join('');
   toast.info('已生成新 API Key，点保存生效');
 }
+// 切换挖矿内核时，若版本号还是另一内核的默认值，就自动填本内核的默认版本
+function pickBuild(build) {
+  const cur = String(s['xmrig.version'] || '').trim();
+  const defaults = { 'xmrig-c3': '6.26.0-C4', 'xmrig': '6.21.3' };
+  s['miner.build'] = build;
+  if (!cur || cur === '6.26.0-C4' || cur === '6.21.3') {
+    s['xmrig.version'] = defaults[build];
+  }
+}
 const apiExample = computed(() => {
   const key = s['api.key'] || '<API_KEY>';
   const port = s['server.port'] || 7788;
@@ -96,7 +105,25 @@ onMounted(load);
           <span class="text-sm">启用 TLS</span>
           <Switch v-model="s['pool.tls']" active-value="true" inactive-value="false" />
         </div>
-        <Field v-model="s['xmrig.version']" label="xmrig 版本" />
+        <!-- miner build (kernel) -->
+        <div class="sm:col-span-2">
+          <span class="field-label">挖矿内核</span>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <button type="button" class="text-left p-3.5 rounded-[12px] border transition-all"
+              :class="s['miner.build']!=='xmrig' ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--border-soft)] bg-[var(--fill)]'"
+              @click="pickBuild('xmrig-c3')">
+              <div class="font-semibold text-sm flex items-center gap-2"><Icon name="zap" :size="15" /> xmrig-C3（c3pool 分支）</div>
+              <div class="text-[12px] text-muted mt-1">c3pool 维护的 GPL 分支，跟进出上游+修复，与 c3pool 矿池最匹配</div>
+            </button>
+            <button type="button" class="text-left p-3.5 rounded-[12px] border transition-all"
+              :class="s['miner.build']==='xmrig' ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--border-soft)] bg-[var(--fill)]'"
+              @click="pickBuild('xmrig')">
+              <div class="font-semibold text-sm flex items-center gap-2"><Icon name="cpu" :size="15" /> xmrig 官方原版</div>
+              <div class="text-[12px] text-muted mt-1">上游 xmrig 官方 Release（github.com/xmrig/xmrig）</div>
+            </button>
+          </div>
+        </div>
+        <Field v-model="s['xmrig.version']" label="xmrig 版本号" hint="需与所选内核的发布标签匹配（C3 如 6.26.0-C4，原版如 6.21.3）" class="sm:col-span-2" />
         <Field v-model="s['miner.api_port']" type="number" label="xmrig API 端口" hint="-1 关闭（算力读取用）" />
         <Field v-model="s['miner.worker']" label="Worker 名称" hint="留空=服务器名/主机名" class="sm:col-span-2" />
 
