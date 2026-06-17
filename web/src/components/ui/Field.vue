@@ -6,6 +6,7 @@ const props = defineProps({
   label: String,
   hint: String,
   mono: Boolean,
+  disabled: Boolean,
   step: [String, Number],
   min: [String, Number]
 });
@@ -17,7 +18,8 @@ const on = (e) => emit('update:modelValue', e.target.value);
   <label class="block">
     <span v-if="label" class="field-label">{{ label }}</span>
     <input :type="type" :value="modelValue" @input="on" :placeholder="placeholder" :step="step" :min="min"
-           class="field" :class="mono && 'font-mono'" />
+           :disabled="disabled"
+           class="field" :class="[mono && 'font-mono', disabled && 'opacity-60 cursor-not-allowed']" />
     <span v-if="hint" class="block mt-1 text-[12px] text-muted">{{ hint }}</span>
   </label>
 </template>

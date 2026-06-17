@@ -44,8 +44,13 @@ function webAuth(req, res, next) {
   res.status(401).json({ error: 'unauthorized' });
 }
 
-// health (no auth) - useful for uptime checks
-app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
+// health (no auth) - useful for uptime checks; first_run tells clients the
+// default password is still in effect (so they can force a change / show a hint)
+app.get('/api/health', (req, res) => res.json({
+  ok: true,
+  ts: Date.now(),
+  first_run: getSetting('web.password') === 'adminadmin'
+}));
 
 // auth check used by the SPA login page
 app.post('/api/auth/check', (req, res) => {

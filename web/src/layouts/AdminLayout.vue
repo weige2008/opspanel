@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { RouterView, RouterLink, useRoute, useRouter } from 'vue-router';
 import { api, setToken, getToken } from '../api.js';
 import Icon from '../components/Icon.vue';
@@ -19,6 +19,14 @@ const pageTitle = computed(() => nav.find((n) => route.path.startsWith(n.to))?.n
 
 function logout() { setToken(null); router.replace('/login'); }
 function goGithub() { window.open('https://github.com/weige2008/opspanel', '_blank'); }
+
+// Enforce first-run password change: never let the default password reach the console.
+onMounted(async () => {
+  try {
+    const h = await api.health();
+    if (h.first_run) { setToken(null); router.replace('/login'); }
+  } catch (_) { /* network hiccup: allow */ }
+});
 </script>
 
 <template>
