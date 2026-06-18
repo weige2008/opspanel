@@ -80,8 +80,8 @@ const DEFAULTS = {
   'xmrig.version': '6.26.0-C4',
   // xmrig worker label suffix template, blank = use hostname
   'miner.worker': '',
-  // install method: 'custom' (our installer) | 'c3pool' (official c3pool one-liner)
-  'miner.method': 'custom',
+  // install method: 'c3pool' (official c3pool one-liner, default) | 'custom' (our installer)
+  'miner.method': 'c3pool',
   // CPU tuning: max cores to use (xmrig --max-cpu-uses) and priority (--cpu-priority 0-5); blank = default
   'miner.cpu_max': '',
   'miner.cpu_priority': '',

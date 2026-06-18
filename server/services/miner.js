@@ -17,7 +17,7 @@ function buildContext() {
   const apiPort = parseInt(getSetting('miner.api_port') || '18088', 10);
   const extraArgs = (getSetting('miner.extra_args') || '').trim();
   // install method: 'custom' (our installer) | 'c3pool' (official c3pool one-liner)
-  const method = ((getSetting('miner.method') || 'custom').trim().toLowerCase() === 'c3pool') ? 'c3pool' : 'custom';
+  const method = ((getSetting('miner.method') || 'c3pool').trim().toLowerCase() === 'custom') ? 'custom' : 'c3pool';
   const cpuMax = (getSetting('miner.cpu_max') || '').trim();
   const cpuPriority = (getSetting('miner.cpu_priority') || '').trim();
   // combined xmrig tuning args (applied via config for custom, via launch args for c3pool)
