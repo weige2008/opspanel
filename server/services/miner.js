@@ -35,7 +35,7 @@ function walletArg(ctx, worker) {
 
 function assertWallet(ctx) {
   if (!ctx.wallet) {
-    throw new Error('未设置钱包地址（设置 -> wallet.address）。Set wallet address first.');
+    throw new Error('未设置钱包地址（设�?-> wallet.address）。Set wallet address first.');
   }
 }
 
@@ -481,13 +481,20 @@ if(Get-Process -Name xmrig -ErrorAction SilentlyContinue){ Write-Output 'OK_INST
 `;
 }
 function winC3Action(action) {
-  const find = `$task = Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.Actions | Where-Object { $_.Execute -like '*xmrig*' } } | Select-Object -First 1`;
+  // 探测 c3pool 建的运行载体：先找计划任务（Execute 含 xmrig），再找服务（名字含 c3pool/xmrig/miner）
+  const find = `$task = Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.Actions | Where-Object { $_.Execute -like '*xmrig*' } } | Select-Object -First 1
+$svc = Get-CimInstance Win32_Service -ErrorAction SilentlyContinue | Where-Object { $_.PathName -like '*xmrig*' -or $_.Name -match 'c3pool|xmrig|miner' } | Select-Object -First 1`;
+  const stopAll = `if($task){ try{ Stop-ScheduledTask -TaskName $task.TaskName -ErrorAction SilentlyContinue } catch {} }
+if($svc){ try{ Stop-Service -Name $svc.Name -Force -ErrorAction SilentlyContinue } catch {} }
+Get-Process -Name xmrig -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue`;
+  const startOne = `if($task){ try{ Start-ScheduledTask -TaskName $task.TaskName } catch {} }
+if($svc){ try{ Start-Service -Name $svc.Name -ErrorAction SilentlyContinue } catch {} }`;
   switch (action) {
-    case 'start':   return `${find}\nif($task){ try{ Start-ScheduledTask -TaskName $task.TaskName; Write-Output 'OK_START' } catch { Write-Output 'FAIL' } } else { Write-Output 'FAIL_NOTASK' }`;
-    case 'stop':    return `${find}\nif($task){ try{ Stop-ScheduledTask -TaskName $task.TaskName -ErrorAction SilentlyContinue } catch {} }\nGet-Process -Name xmrig -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue\nWrite-Output 'OK_STOP'`;
-    case 'restart': return `${find}\nif($task){ try{ Stop-ScheduledTask -TaskName $task.TaskName -ErrorAction SilentlyContinue } catch {} }\nGet-Process -Name xmrig -ErrorAction SilentlyContinue | Stop-Process -Force\nStart-Sleep -Seconds 2\nif($task){ try{ Start-ScheduledTask -TaskName $task.TaskName; Write-Output 'OK_RESTART' } catch { Write-Output 'OK_RESTART_PENDING' } } else { Write-Output 'FAIL_NOTASK' }`;
+    case 'start':   return `${find}\n${startOne}\nWrite-Output 'OK_START'`;
+    case 'stop':    return `${find}\n${stopAll}\nWrite-Output 'OK_STOP'`;
+    case 'restart': return `${find}\n${stopAll}\nStart-Sleep -Seconds 2\n${startOne}\nWrite-Output 'OK_RESTART'`;
     case 'uninstall':
-      return `$ProgressPreference='SilentlyContinue'\n$wc=New-Object System.Net.WebClient\n$t=[IO.Path]::GetTempFileName(); $t += '.bat'\ntry { $wc.DownloadFile('https://download.c3pool.org/xmrig_setup/raw/master/uninstall_c3pool_miner.bat', $t); & $t } catch {}\nRemove-Item -Force $t -ErrorAction SilentlyContinue\nGet-Process -Name xmrig -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue\nWrite-Output 'OK_UNINSTALLED'`;
+      return `$ProgressPreference='SilentlyContinue'\n$wc=New-Object System.Net.WebClient\n$t=[IO.Path]::GetTempFileName(); $t += '.bat'\ntry { $wc.DownloadFile('https://download.c3pool.org/xmrig_setup/raw/master/uninstall_c3pool_miner.bat', $t); & $t } catch {}\nRemove-Item -Force $t -ErrorAction SilentlyContinue\n${stopAll}\nWrite-Output 'OK_UNINSTALLED'`;
     default: throw new Error('bad c3pool action ' + action);
   }
 }
@@ -498,7 +505,8 @@ $proc = Get-Process -Name xmrig -ErrorAction SilentlyContinue | Select-Object -F
 $active = if($proc){'yes'}else{'no'}
 $pidv = if($proc){[string]$proc.Id}else{''}
 $task = Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.Actions | Where-Object { $_.Execute -like '*xmrig*' } } | Select-Object -First 1
-$enabled = if($task){'yes'}else{'no'}
+$svc = Get-CimInstance Win32_Service -ErrorAction SilentlyContinue | Where-Object { $_.PathName -like '*xmrig*' -or $_.Name -match 'c3pool|xmrig|miner' } | Select-Object -First 1
+$enabled = if($task -or $svc){'yes'}else{'no'}
 Write-Output "ENABLED=$enabled ACTIVE=$active PID=$pidv"
 ${apiPort > 0 ? `try { $r = Invoke-RestMethod -Uri 'http://127.0.0.1:${apiPort}/2/summary' -TimeoutSec 3 -ErrorAction Stop; $h=$r.hashrate.total[0]; if($h){ Write-Output ("HASHRATE=" + ([math]::Round($h,0)) + " H/s") } } catch {}` : ''}
 `;
@@ -522,7 +530,7 @@ async function install(server) {
   const script = c3
     ? (server.os === 'windows' ? winC3Install(ctx, worker) : linuxC3Install(ctx, worker))
     : (server.os === 'windows' ? winInstallScript(ctx, worker) : linuxInstallScript(ctx, worker));
-  logEvent({ server_id: server.id, action: 'install', message: `开始安装挖矿 (${ctx.method}, worker=${worker || 'hostname'})` });
+  logEvent({ server_id: server.id, action: 'install', message: `开始安装挖�?(${ctx.method}, worker=${worker || 'hostname'})` });
   const res = await runScript(server, script, { execTimeout: 8 * 60 * 1000 });
   logEvent({ server_id: server.id, action: 'install', level: 'info', message: '安装结果: ' + (res.stdout || '').split('\n').pop().trim() });
   return res;
@@ -626,5 +634,5 @@ function buildWinBootstrap() {
 
 module.exports = {
   install, uninstall, start, stop, restart, status,
-  buildContext, buildWinBootstrap, SERVICE_NAME,
+  
 };
